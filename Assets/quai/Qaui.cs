@@ -7,6 +7,7 @@ public class QuaiController : MonoBehaviour
     private Transform player;
     private Animator animator;
     private SpriteRenderer sprite;
+    private Rigidbody2D rb;
 
     [Header("Health Settings")]
     public int maxHealth = 100;
@@ -16,11 +17,18 @@ public class QuaiController : MonoBehaviour
     [Header("Detection Settings")]
     public float detectionRange = 5f; // Khoảng cách phát hiện player
     private bool isTouchingPlayer = false;
+    private bool isDead = false;
+
+    [Header("Knockback Settings")]
+    public float knockbackForce = 5f;
+    public float knockbackDuration = 0.2f;
+    private bool isKnockback = false;
 
     void Start()
     {
         animator = GetComponent<Animator>();
         sprite = GetComponent<SpriteRenderer>();
+        rb = GetComponent<Rigidbody2D>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
 
         currentHealth = maxHealth;
@@ -33,6 +41,8 @@ public class QuaiController : MonoBehaviour
 
     void Update()
     {
+        if (isDead || isKnockback) return;
+
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
         if (distanceToPlayer <= detectionRange && !isTouchingPlayer)
@@ -81,16 +91,48 @@ public class QuaiController : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
         if (healthBar != null)
             healthBar.value = currentHealth;
 
         if (currentHealth <= 0)
+        {
             Die();
+        }
+        else
+        {
+            StartCoroutine(ApplyKnockback());
+        }
+    }
+
+    System.Collections.IEnumerator ApplyKnockback()
+    {
+        isKnockback = true;
+
+        Vector2 direction = (transform.position - player.position).normalized;
+        rb.velocity = direction * knockbackForce;
+
+        yield return new WaitForSeconds(knockbackDuration);
+
+        rb.velocity = Vector2.zero;
+        isKnockback = false;
     }
 
     void Die()
     {
-        Destroy(gameObject);
+        isDead = true;
+
+        animator.SetTrigger("isdie"); // Gọi animation chết
+        animator.SetBool("isrun", false);
+        ResetAttack();
+
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        this.enabled = false;
+
+        Destroy(gameObject, 2f); // Hủy sau 2 giây
     }
 }

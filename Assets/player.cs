@@ -2,6 +2,7 @@
 
 public class PlayerMovement : MonoBehaviour
 {
+
     public float speed = 5f;
 
     private Rigidbody2D rb;
@@ -12,6 +13,8 @@ public class PlayerMovement : MonoBehaviour
     private float lastXTime = 0f;
     private float doubleTapThreshold = 0.3f;
     public Transform attackArea; // Gán trong Inspector
+    public AudioSource attackSound;
+
 
     void Start()
     {
@@ -62,6 +65,9 @@ public class PlayerMovement : MonoBehaviour
     void TriggerAttack(string paramName)
     {
         StartCoroutine(AttackCoroutine(paramName));
+        if (attackSound != null)
+            attackSound.Play();
+
     }
 
     System.Collections.IEnumerator AttackCoroutine(string paramName)
